@@ -1,3 +1,5 @@
+# C++ Start
+
 # Prerequisites
 *.d
 
@@ -30,3 +32,69 @@
 *.exe
 *.out
 *.app
+
+# C++ End
+
+# CMake Start
+
+CMakeCache.txt
+CMakeFiles
+CMakeScripts
+Testing
+Makefile
+cmake_install.cmake
+install_manifest.txt
+compile_commands.json
+CTestTestfile.cmake
+
+# CMake End
+
+# OS X Start
+
+# General
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Icon must end with two \r
+Icon
+
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# OS X End
+
+# JetBrains Start
+# Reference: https://github.com/github/gitignore/blob/master/Global/JetBrains.gitignore
+
+# YKW, just leave them.
+.idea/
+
+# CMake
+cmake-build-debug/
+cmake-build-release/
+
+# File-based project format
+*.iws
+
+# mpeltonen/sbt-idea plugin
+.idea_modules/
+
+# JetBrains End
