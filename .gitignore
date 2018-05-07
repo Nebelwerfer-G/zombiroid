@@ -98,3 +98,6 @@ cmake-build-release/
 .idea_modules/
 
 # JetBrains End
+
+# Valgrind Output
+memcheck.txt

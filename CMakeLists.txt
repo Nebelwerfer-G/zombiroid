@@ -4,7 +4,7 @@ PROJECT(zombiroid)
 
 SET(CMAKE_BUILD_TYPE Debug)
 SET(CMAKE_CXX_COMPILER /usr/bin/g++)
-SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -std=c++11 -o zombiroidgame -lSDL2 -lSDL2_image")
+SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -W -Wall -std=c++11 -lib=stdlibc++ -o zombiroidgame -lSDL2 -lSDL2_image")
 SET(PROJECT_SOURCE_DIR "/Users/nebelwerferg/zombiroid/")
 SET(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${PROJECT_SOURCE_DIR}/cmake")
 FILE(COPY assets DESTINATION ${CMAKE_BINARY_DIR})
