@@ -101,3 +101,6 @@ cmake-build-release/
 
 # Valgrind Output
 memcheck.txt
+
+# Project Output
+zombiroidgame
