@@ -104,3 +104,5 @@ memcheck.txt
 
 # Project Output
 zombiroidgame
+zombiroidgame.dSYM/
+
