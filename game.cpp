@@ -1,6 +1,10 @@
 #include <iostream>
 #include <SDL2/SDL.h>
 #include <SDL2_image/SDL_image.h>
+#include <random>
+#include <thread>
+#include <chrono>
+#define RNG rand()%(wlength-eSpriteH)
 
 using namespace std;
 
@@ -21,9 +25,10 @@ public:
 class Objects{
 private:
     SDL_Texture* objTex;
-    SDL_Rect startR,destR;
+    SDL_Rect startR, destR;
     SDL_Renderer* rend;
-
+    SDL_Event pEvent;
+    int orient = 1; // Sprite orientaton flag. Sprites are "facing right" by default, start from there, by clockwise, R=1, D=2, L=3, U=4.
 
 
 public:
@@ -33,34 +38,84 @@ public:
         startR.h = texh; destR.h = texh;
         startR.w = texw; destR.w = texw;
         startR.x = texx; startR.y = texy;
-    };
+    }
     ~Objects(){};
 
-    void posUpdate(int destx, int desty) {
-        destR.x = destx;
-        destR.y = desty;
+    SDL_Texture *getObjTex() const { return objTex; };
+
+    const SDL_Rect &getStartR() const { return startR; }
+
+    const SDL_Rect &getDestR() const { return destR; }
+
+
+    void enemyposUpdate() {
+        enemyPosCalc();
     }
 
-    void posRender() { SDL_RenderCopy(rend, objTex, &startR, &destR); }
+    void posRender() {
+            SDL_RenderCopy(rend, objTex, NULL, &startR);
+    }
+
+    void playerPosCalc(SDL_Event onEvent, int movstep) {
+            pEvent = onEvent;
+            if (pEvent.type==SDL_KEYDOWN) {
+                switch (pEvent.key.keysym.sym) {
+                    case SDLK_w:
+                        startR.y-=movstep;
+                        break;
+                    case SDLK_a:
+                        startR.x-=movstep;
+                        break;
+                    case SDLK_d:
+                        startR.x+=movstep;
+                        break;
+                    case SDLK_s:
+                        startR.y+=movstep;
+                        break;
+                    default:
+                        break;
+                }
+            }
+
+    }
+
+    void enemyPosCalc() {
+
+    }
+
+    bool collision(Objects p) {
+        SDL_Rect pRect = p.getStartR();
+        if (startR.x+startR.w < pRect.x || startR.x > pRect.x+pRect.w) return false;
+        if (startR.y+startR.h < pRect.y || startR.y > pRect.y+pRect.h) return false;
+
+        return true;
+    }
+
 };
 
 class MainGame{
 private:
-    int wheight;
-    int wwidth;
+    int wlength;
     string wTitle;
     bool gRun;
     const int pMovStep = 4;
     const float pFramespeed = pMovStep/60;
 
     SDL_Window *window;
-    SDL_Texture *bkgnd, *pSprite, *eSprite;
-    SDL_Surface *texTemp;
-    SDL_Rect pSRect, eSRect;
+    SDL_Texture *bkgnd;
     Objects* player;
+    Objects* enemy[5];
+    Objects* bullet[3];
+    SDL_Renderer *mRenderer;
 
+    const int pSpriteW = 62;
+    const int pSpriteH = 40;
+    const int eSpriteW = 48;
+    const int eSpriteH = 44;
+
+    int lives = 3;
+    int score = 0;
 public:
-    static SDL_Renderer *mRenderer;
     MainGame() {};
     ~MainGame() {};
 
@@ -72,37 +127,37 @@ public:
             case SDL_QUIT:
                 gRun = false;
                 break;
-            case SDL_KEYDOWN:
-                switch (gameEvent.key.keysym.sym) {
-                    case SDLK_w:
-                        pSRect.y-=pMovStep;
-                        break;
-                    case SDLK_a:
-                        pSRect.x-=pMovStep;
-                        break;
-                    case SDLK_d:
-                        pSRect.x+=pMovStep;
-                        break;
-                    case SDLK_s:
-                        pSRect.y+=pMovStep;
-                        break;
-                    default:
-                        break;
-                }
             default:
                 break;
         }
+        player->playerPosCalc(gameEvent, pMovStep);
     }
 
+    void whenPlayerCollide() {
+        player->~Objects();
+        lives--;
+        cout << "Zombie encountered, current life remaining: " << lives << endl;
+        if (lives < 0) {
+            cout << "You have ran out your luck today! Better luck next time!\nGame Over" << endl;
+            this_thread::sleep_until(chrono::system_clock::now() + chrono::seconds(2));
+            gRun = false;
+        } else {
+            player = new Objects("assets/player_idle.png", mRenderer, pSpriteH, pSpriteW, ((wlength-pSpriteW)/2), ((wlength-pSpriteH)/2));
+        }
+    }
 
-    void gameInit(string title, int height, int width) {
+    void whenBulletCollide() {
+
+    }
+
+    void gameInit(string title, int length) {
         wTitle = title;
-        wwidth = width;
-        wheight = height;
+        wlength = length;
+        srand(time(0));
         if (SDL_Init(SDL_INIT_EVERYTHING) == 0) {
             cout << "SDL Initialized." << endl;
 
-            window = SDL_CreateWindow(wTitle.c_str(),SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,wwidth,wheight,0);
+            window = SDL_CreateWindow(wTitle.c_str(),SDL_WINDOWPOS_CENTERED,SDL_WINDOWPOS_CENTERED,wlength,wlength,0);
             if (window) { cout << "Window Initialized and created." << endl; }
 
             mRenderer = SDL_CreateRenderer(window,-1,SDL_RENDERER_PRESENTVSYNC);
@@ -114,6 +169,7 @@ public:
 
             bgRender();
             psRender();
+            esRender();
 
 
             gRun = true;
@@ -133,14 +189,29 @@ public:
     }
 
     void psRender() {
-        player = new Objects("assets/player_idle.png", mRenderer, 40, 62, ((wwidth-62)/2), ((wheight-40)/2));
-        player->posUpdate(((wwidth-62)/2), ((wheight-40)/2));
+        player = new Objects("assets/player_idle.png", mRenderer, pSpriteH, pSpriteW, ((wlength-pSpriteW)/2), ((wlength-pSpriteH)/2));
     }
 
+    void esRender() {
+        enemy[0] = new Objects("assets/zombie_idle.png", mRenderer, eSpriteH, eSpriteW, RNG, RNG);
+        enemy[1] = new Objects("assets/zombie_idle.png", mRenderer, eSpriteH, eSpriteW, RNG, RNG);
+        enemy[2] = new Objects("assets/zombie_idle.png", mRenderer, eSpriteH, eSpriteW, RNG, RNG);
+        enemy[3] = new Objects("assets/zombie_idle.png", mRenderer, eSpriteH, eSpriteW, RNG, RNG);
+        enemy[4] = new Objects("assets/zombie_idle.png", mRenderer, eSpriteH, eSpriteW, RNG, RNG);
+        for (int i = 0; i < 5; ++i) {
+            enemy[i]->enemyposUpdate();
+        }
+    }
     void gameRender() {
         SDL_RenderClear(mRenderer);
-        if (bkgnd) { SDL_RenderCopy(mRenderer,bkgnd,NULL,NULL); }
-        if (pSprite) { SDL_RenderCopy(mRenderer,pSprite,NULL,&pSRect); }
+        if (bkgnd) SDL_RenderCopy(mRenderer,bkgnd,NULL,NULL);
+        if (player->getObjTex()) {
+            player->posRender();
+        }
+        for (int i = 0; i < 5; ++i) {
+            if (enemy[i]->getObjTex()) enemy[i]->posRender();
+            if (enemy[i]->collision(*player)) whenPlayerCollide();
+        }
         SDL_RenderPresent(mRenderer);
     }
 
@@ -160,8 +231,7 @@ public:
 int main () {
     MainGame *game = nullptr;
     string gTitle = "Zombiroid";
-    int height = 800;
-    int width = 800;
+    int length = 800;
     game = new MainGame();
 
 
@@ -170,7 +240,7 @@ int main () {
     Uint32 FPS;
     const int dFPS = 60;
     const int dFrametime = 1000/dFPS;
-    game->gameInit(gTitle,height,width);
+    game->gameInit(gTitle,length);
     startcount = SDL_GetTicks();
 
     while (game->runIndicator()) {
@@ -186,7 +256,6 @@ int main () {
             if (FPS>dFPS) {
                 SDL_Delay(dFrametime-elapsedcount);
             }
-            cout << "Current FPS: " << FPS << endl;
         }
     }
 
