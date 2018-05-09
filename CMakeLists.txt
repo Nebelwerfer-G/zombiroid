@@ -14,4 +14,3 @@ SET(SOURCE_FILES game.cpp)
 ADD_EXECUTABLE(zombiroidgame ${SOURCE_FILES})
 
 ADD_LIBRARY(zombiroid ${SOURCE_FILES})
-
