@@ -159,12 +159,16 @@ public:
 
     void whenBulletCollide(int bulletIndex, int enemyIndex) {
         score++;
-        bullet[bulletIndex]->~Objects();
-        bullet[bulletIndex] = NULL;
+        whenBulletFade(bulletIndex);
         enemy[enemyIndex]->~Objects();
         enemy[enemyIndex] = NULL;
         enemy[enemyIndex] = new Objects("assets/zombie_idle.png", mRenderer, eSpriteH, eSpriteW, eBoundR, RNG);
 
+    }
+
+    void whenBulletFade(int bulletIndex) {
+        bullet[bulletIndex]->~Objects();
+        bullet[bulletIndex] = NULL;
     }
 
     void gameInit(string title, int length) {
@@ -234,6 +238,7 @@ public:
             }
             for (int i = 0; i < ENEMY_MAX; ++i) {
                 if (bullet[j]!=NULL && bullet[j]->collision(*enemy[i])) whenBulletCollide(j, i);
+                if (bullet[j]!=NULL && bullet[j]->getStartR().x>wlength) whenBulletFade(j);
             }
         }
         SDL_RenderPresent(mRenderer);
